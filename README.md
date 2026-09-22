@@ -35,3 +35,10 @@ make precommit
 
 Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las convenciones de
 ramas, commits y pull requests.
+
+## Documentación
+
+- [Especificación detallada del MVP](docs/especificacion-mvp.md)
+- [Catálogo y selección de fuentes](docs/fuentes.md)
+- [Definición de trabajo del IMOR](docs/metodologia/definicion-imor.md)
+- [Política de datos](data/README.md)

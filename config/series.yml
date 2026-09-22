@@ -1,0 +1,85 @@
+version: 1
+
+# Este catálogo registra decisiones de datos, no valores observados. Los campos
+# pendientes deben validarse contra metadatos oficiales antes de implementar la
+# descarga automática.
+series:
+  imor_consumo_sofipos:
+    estado: por_validar
+    proveedor: CNBV
+    nombre_oficial: null
+    identificador: null
+    url_fuente: https://portafolioinfo.cnbv.gob.mx/Paginas/Inicio.aspx
+    url_descarga: null
+    frecuencia_origen: mensual
+    frecuencia_modelo: mensual
+    unidad_origen: porcentaje
+    unidad_modelo: porcentaje
+    transformacion: ninguna
+    rezago_modelo_meses: 0
+    rezago_publicacion: por_validar
+    politica_revisiones: por_definir
+    cobertura: por_validar
+    notas:
+      - Confirmar la definición de cartera vencida y cartera total.
+      - Confirmar si el agregado sectorial es publicado o debe reconstruirse.
+      - Auditar cambios contables y entradas o salidas de instituciones.
+
+  inpc:
+    estado: por_validar
+    proveedor: INEGI
+    nombre_oficial: Índice Nacional de Precios al Consumidor
+    identificador: null
+    url_fuente: null
+    url_descarga: null
+    frecuencia_origen: mensual
+    frecuencia_modelo: mensual
+    unidad_origen: indice
+    unidad_modelo: porcentaje
+    transformacion: variacion_interanual
+    rezago_modelo_meses: 3
+    rezago_publicacion: por_validar
+    politica_revisiones: por_definir
+    cobertura: por_validar
+    notas:
+      - Reconciliar la variación calculada contra una serie oficial de inflación.
+
+  desempleo_desestacionalizado:
+    estado: por_validar
+    proveedor: INEGI
+    nombre_oficial: null
+    identificador: null
+    url_fuente: null
+    url_descarga: null
+    frecuencia_origen: mensual
+    frecuencia_modelo: mensual
+    unidad_origen: porcentaje
+    unidad_modelo: porcentaje
+    transformacion: ninguna
+    rezago_modelo_meses: 3
+    rezago_publicacion: por_validar
+    politica_revisiones: por_definir
+    cobertura: por_validar
+    notas:
+      - Confirmar población de referencia y ajuste estacional.
+      - Auditar la comparabilidad y los faltantes durante la pandemia.
+
+  tasa_nominal_fondeo:
+    estado: por_validar
+    proveedor: Banxico
+    nombre_oficial: null
+    identificador: null
+    url_fuente: https://www.banxico.org.mx/SieInternet/
+    url_descarga: null
+    frecuencia_origen: por_validar
+    frecuencia_modelo: mensual
+    unidad_origen: porcentaje
+    unidad_modelo: porcentaje
+    transformacion: promedio_mensual_por_validar
+    rezago_modelo_meses: 3
+    rezago_publicacion: por_validar
+    politica_revisiones: por_definir
+    cobertura: por_validar
+    notas:
+      - Elegir una tasa con cobertura suficiente para el periodo del IMOR.
+      - Justificar su uso como proxy del costo de fondeo de las Sofipos.
