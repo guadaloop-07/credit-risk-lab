@@ -9,7 +9,12 @@ license-files = ["LICENSE"]
 authors = [
     { name = "Guadalupe Castillo Solano" },
 ]
-dependencies = []
+dependencies = [
+    "openpyxl>=3.1,<4",
+    "pandas>=2.2,<3",
+    "pyarrow>=18,<24",
+    "PyYAML>=6,<7",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -18,9 +23,11 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "mypy>=1.18.2,<2",
+    "pandas-stubs>=2.2,<3",
     "pre-commit>=4.6.1,<5",
     "pytest>=9,<10",
     "ruff==0.16.8",
+    "types-PyYAML>=6.0.12,<7",
 ]
 
 [tool.hatch.build.targets.wheel]

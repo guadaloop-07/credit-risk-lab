@@ -157,6 +157,11 @@ ENV/
 env.bak/
 venv.bak/
 
+# Datos descargados y artefactos reproducibles
+data/raw/
+data/interim/
+data/processed/
+
 # Spyder project settings
 .spyderproject
 .spyproject
