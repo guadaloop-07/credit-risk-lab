@@ -5,81 +5,117 @@ version: 1
 # descarga automática.
 series:
   imor_consumo_sofipos:
-    estado: por_validar
+    estado: validada
     proveedor: CNBV
-    nombre_oficial: null
-    identificador: null
+    nombre_oficial: Índice de morosidad de la cartera de consumo de las Sofipos
+    identificador: >-
+      sh_data_export_27.xlsx / Exportación_SH / IMOR consumo / Total SOFIPOS.
     url_fuente: https://portafolioinfo.cnbv.gob.mx/Paginas/Inicio.aspx
-    url_descarga: null
+    url_descarga: >-
+      https://portafolioinfdoctos.cnbv.gob.mx/Documentacion/minfo/CSV/series_historicas/sofipos/sh_data_export_27.xlsx
     frecuencia_origen: mensual
     frecuencia_modelo: mensual
     unidad_origen: porcentaje
     unidad_modelo: porcentaje
     transformacion: ninguna
     rezago_modelo_meses: 0
-    rezago_publicacion: por_validar
-    politica_revisiones: por_definir
-    cobertura: por_validar
+    rezago_publicacion: mensual; fecha_exacta_por_documentar
+    politica_revisiones: usar_la_ultima_extraccion_del_portal; no_hay_vintages
+    cobertura: enero_de_2017_a_julio_de_2026_en_la_descarga_validada
     notas:
-      - Confirmar la definición de cartera vencida y cartera total.
-      - Confirmar si el agregado sectorial es publicado o debe reconstruirse.
-      - Auditar cambios contables y entradas o salidas de instituciones.
+      - >-
+        La descarga oficial contiene una fila agregada IMOR consumo para Total
+        SOFIPOS. La ingesta conserva el Excel íntegro y exige que esa fila sea única.
+      - >-
+        Confirmar en la primera extracción que IMOR = cartera vencida /
+        cartera total y conservar los saldos para reconciliarlo.
+      - >-
+        El estudio de Banxico excluye una institución por problemas financieros
+        y de gobernanza; el MVP debe decidir y documentar si replica esa regla.
+      - >-
+        Marcar enero de 2022 como posible ruptura por adopción de IFRS 9 y
+        auditar entradas, salidas y fusiones de instituciones.
 
   inpc:
-    estado: por_validar
+    estado: validada
     proveedor: INEGI
     nombre_oficial: Índice Nacional de Precios al Consumidor
-    identificador: null
-    url_fuente: null
-    url_descarga: null
+    identificador: "865541; Precios al Consumidor (INPC), tabulado CA57_2018A"
+    url_fuente: https://www.inegi.org.mx/temas/inpc/
+    url_descarga: >-
+      https://www.inegi.org.mx/app/tabulados/inp/default.aspx?nc=ca57_2018a&opc=t
     frecuencia_origen: mensual
     frecuencia_modelo: mensual
     unidad_origen: indice
     unidad_modelo: porcentaje
     transformacion: variacion_interanual
     rezago_modelo_meses: 3
-    rezago_publicacion: por_validar
-    politica_revisiones: por_definir
-    cobertura: por_validar
+    rezago_publicacion: publicado_mensualmente_a_mas_tardar_el_dia_9
+    politica_revisiones: usar_la_ultima_version_publicada_por_INEGI
+    cobertura: enero_de_1970_a_agosto_de_2026_en_la_descarga_validada
     notas:
-      - Reconciliar la variación calculada contra una serie oficial de inflación.
+      - >-
+        Serie del INPC general nacional, base segunda quincena de julio de
+        2018 = 100 y actualización de canasta y ponderadores de 2024.
+      - >-
+        La ingesta usa el botón oficial Descarga CSV del tabulado CA57_2018A.
+        El endpoint anterior 628194 dejó de actualizarse en julio de 2024.
+      - Reconciliar la variación calculada contra una serie oficial.
 
   desempleo_desestacionalizado:
-    estado: por_validar
+    estado: validada_con_restriccion_de_descarga
     proveedor: INEGI
-    nombre_oficial: null
-    identificador: null
-    url_fuente: null
-    url_descarga: null
+    nombre_oficial: >-
+      Tasa de desocupación nacional, total, serie desestacionalizada
+    identificador: "444884; Tabulado INEGI 622, columna Total nacional"
+    url_fuente: https://www.inegi.org.mx/app/tabulados/default.html?nc=622&opc=t
+    url_descarga: >-
+      https://www.inegi.org.mx/app/tabulados/serviciocuadros/wsDataService.svc/listaindicadorbiinegi/444884/false/0700/es/json/{anio_inicio}/{anio_fin}/0/0/3
     frecuencia_origen: mensual
     frecuencia_modelo: mensual
     unidad_origen: porcentaje
     unidad_modelo: porcentaje
     transformacion: ninguna
     rezago_modelo_meses: 3
-    rezago_publicacion: por_validar
-    politica_revisiones: por_definir
-    cobertura: por_validar
+    rezago_publicacion: por_validar_en_la_primera_descarga
+    politica_revisiones: usar_la_ultima_version_del_tabulado_desestacionalizado
+    cobertura: por_confirmar_en_la_primera_descarga
     notas:
-      - Confirmar población de referencia y ajuste estacional.
-      - Auditar la comparabilidad y los faltantes durante la pandemia.
+      - Unidad: porcentaje respecto de la población económicamente activa.
+      - >-
+        El tabulado identifica una serie mensual nacional por sexo y permite
+        exportación CSV/XLS; conservar la descarga original y su fecha.
+      - >-
+        Auditar comparabilidad, cobertura y notas metodológicas en 2020–2021;
+        no interpolar meses faltantes.
 
   tasa_nominal_fondeo:
-    estado: por_validar
+    estado: validada
     proveedor: Banxico
-    nombre_oficial: null
-    identificador: null
-    url_fuente: https://www.banxico.org.mx/SieInternet/
-    url_descarga: null
-    frecuencia_origen: por_validar
+    nombre_oficial: TIIE a 28 días, tasa promedio mensual
+    identificador: "SIE SF283; cuadro CF113"
+    url_fuente: >-
+      https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF113&locale=es
+    url_descarga: >-
+      https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF113&locale=es
+    frecuencia_origen: mensual
     frecuencia_modelo: mensual
     unidad_origen: porcentaje
     unidad_modelo: porcentaje
-    transformacion: promedio_mensual_por_validar
+    transformacion: ninguna; usar_la_tasa_promedio_mensual_publicada
     rezago_modelo_meses: 3
-    rezago_publicacion: por_validar
-    politica_revisiones: por_definir
-    cobertura: por_validar
+    rezago_publicacion: por_validar_en_la_primera_descarga
+    politica_revisiones: usar_la_ultima_version_del_SIE
+    cobertura: enero_de_1995_a_agosto_de_2026_al_momento_de_validacion
     notas:
-      - Elegir una tasa con cobertura suficiente para el periodo del IMOR.
-      - Justificar su uso como proxy del costo de fondeo de las Sofipos.
+      - >-
+        Banxico publica esta serie mensual en porcentajes como tasa promedio;
+        cubre holgadamente el periodo común del MVP.
+      - >-
+        Se selecciona como proxy reproducible de la tasa de fondeo. El estudio
+        de referencia de Banxico usa una TIIE real de fondeo como proxy de la
+        tasa del crédito de las Sofipos; no debe interpretarse como su costo de
+        fondeo observado.
+      - >-
+        La metodología de la TIIE a 28 días cambió a partir del 1 de enero de
+        2025; incluir una sensibilidad o advertencia de ruptura.

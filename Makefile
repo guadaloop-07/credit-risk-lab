@@ -1,4 +1,4 @@
-.PHONY: setup formato lint pruebas precommit verificar
+.PHONY: setup formato lint pruebas precommit verificar datos validar
 
 setup:
 	uv sync --all-groups
@@ -20,3 +20,9 @@ precommit:
 	uv run pre-commit run --all-files
 
 verificar: lint pruebas
+
+datos:
+	uv run python -m riesgo_crediticio.datos.ingesta --imor-csv "$(IMOR_CSV)" $(if $(IMOR_FECHA),--columna-fecha "$(IMOR_FECHA)") $(if $(IMOR_VALOR),--columna-imor "$(IMOR_VALOR)")
+
+validar:
+	uv run python -m riesgo_crediticio.datos.calidad
