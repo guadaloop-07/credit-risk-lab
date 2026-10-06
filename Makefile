@@ -22,7 +22,7 @@ precommit:
 verificar: lint pruebas
 
 datos:
-	uv run python -m riesgo_crediticio.datos.ingesta --imor-csv "$(IMOR_CSV)" $(if $(IMOR_FECHA),--columna-fecha "$(IMOR_FECHA)") $(if $(IMOR_VALOR),--columna-imor "$(IMOR_VALOR)")
+	uv run python -m riesgo_crediticio.datos.ingesta $(if $(IMOR_CSV),--imor-csv "$(IMOR_CSV)") $(if $(IMOR_FECHA),--columna-fecha "$(IMOR_FECHA)") $(if $(IMOR_VALOR),--columna-imor "$(IMOR_VALOR)")
 
 validar:
 	uv run python -m riesgo_crediticio.datos.calidad

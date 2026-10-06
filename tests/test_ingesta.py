@@ -3,18 +3,52 @@
 from __future__ import annotations
 
 import json
+import ssl
+import zipfile
+from email.message import Message
+from io import BytesIO
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
 
 from riesgo_crediticio.datos.calidad import evaluar_tabla
 from riesgo_crediticio.datos.ingesta import (
+    ErrorIngesta,
     _extraer_imor_exportacion_cnbv,
     construir_tabla,
+    descargar_excel_cnbv,
     normalizar_banxico,
     normalizar_inegi,
     normalizar_inpc_csv,
 )
+
+
+class RespuestaHTTPFalsa:
+    """Respuesta HTTP mínima para probar descargas sin acceder a la red."""
+
+    def __init__(self, contenido: bytes, tipo_contenido: str) -> None:
+        self._contenido = contenido
+        self.headers = Message()
+        self.headers["Content-Type"] = tipo_contenido
+        self.headers["ETag"] = '"version-1"'
+        self.headers["Last-Modified"] = "Tue, 08 Sep 2026 16:36:23 GMT"
+
+    def __enter__(self) -> RespuestaHTTPFalsa:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return self._contenido
+
+
+def _xlsx_minimo() -> bytes:
+    contenido = BytesIO()
+    with zipfile.ZipFile(contenido, "w") as archivo:
+        archivo.writestr("[Content_Types].xml", "<Types />")
+    return contenido.getvalue()
 
 
 def test_extrae_imor_consumo_del_formato_ancho_cnbv() -> None:
@@ -34,6 +68,49 @@ def test_extrae_imor_consumo_del_formato_ancho_cnbv() -> None:
         {"mes_observacion": pd.Timestamp("2024-01-31"), "imor_pct": 8.2},
         {"mes_observacion": pd.Timestamp("2024-02-29"), "imor_pct": 8.4},
     ]
+
+
+def test_descarga_excel_cnbv_valida_formato_y_metadatos() -> None:
+    """La descarga automática conserva los metadatos HTTP del XLSX oficial."""
+    contenido = _xlsx_minimo()
+    respuesta = RespuestaHTTPFalsa(
+        contenido,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+    with patch("riesgo_crediticio.datos.ingesta.urlopen", return_value=respuesta):
+        resultado = descargar_excel_cnbv("https://ejemplo.gob.mx/imor.xlsx")
+
+    assert resultado.contenido == contenido
+    assert resultado.etag == '"version-1"'
+    assert resultado.ultima_modificacion == "Tue, 08 Sep 2026 16:36:23 GMT"
+
+
+def test_descarga_excel_cnbv_conserva_verificacion_tls() -> None:
+    """La excepción de cadena incompleta no desactiva TLS ni hostnames."""
+    respuesta = RespuestaHTTPFalsa(
+        _xlsx_minimo(),
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+    with patch(
+        "riesgo_crediticio.datos.ingesta.urlopen", return_value=respuesta
+    ) as urlopen:
+        descargar_excel_cnbv("https://ejemplo.gob.mx/imor.xlsx")
+
+    contexto = urlopen.call_args.kwargs["context"]
+    assert isinstance(contexto, ssl.SSLContext)
+    assert contexto.check_hostname is True
+    assert contexto.verify_mode == ssl.CERT_REQUIRED
+
+
+def test_descarga_excel_cnbv_rechaza_respuesta_que_no_es_xlsx() -> None:
+    """Una respuesta HTML no se debe archivar ni intentar interpretar como Excel."""
+    respuesta = RespuestaHTTPFalsa(b"<html>error</html>", "text/html")
+
+    with patch("riesgo_crediticio.datos.ingesta.urlopen", return_value=respuesta):
+        with pytest.raises(ErrorIngesta, match="tipo de contenido XLSX"):
+            descargar_excel_cnbv("https://ejemplo.gob.mx/imor.xlsx")
 
 
 def test_normaliza_respuesta_inegi() -> None:

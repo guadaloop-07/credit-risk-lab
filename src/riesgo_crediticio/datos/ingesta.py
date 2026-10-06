@@ -8,9 +8,12 @@ import hashlib
 import json
 import os
 import re
+import ssl
+import zipfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from http.cookiejar import CookieJar
+from io import BytesIO
 from pathlib import Path
 from typing import cast
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -33,6 +36,7 @@ URL_BANXICO = (
     "https://www.banxico.org.mx/SieAPIRest/service/v1/series/"
     "{serie}/datos/{inicio}-01-01/{fin}-12-31?token={token}"
 )
+RUTA_CERTIFICADO_INTERMEDIO_CNBV = "certificados/globalsign-rsa-ov-ssl-ca-2018.pem"
 
 
 class ErrorIngesta(RuntimeError):
@@ -46,6 +50,16 @@ class SerieConfigurada:
     nombre: str
     identificador: str
     url_fuente: str
+    url_descarga: str
+
+
+@dataclass(frozen=True)
+class ArchivoDescargado:
+    """Contenido descargado y metadatos HTTP útiles para su trazabilidad."""
+
+    contenido: bytes
+    etag: str | None
+    ultima_modificacion: str | None
 
 
 def _raiz_proyecto() -> Path:
@@ -66,9 +80,18 @@ def cargar_series(ruta: Path) -> dict[str, SerieConfigurada]:
             raise ErrorIngesta(f"La serie {nombre} no tiene metadatos válidos.")
         identificador = datos.get("identificador")
         url_fuente = datos.get("url_fuente")
-        if not isinstance(identificador, str) or not isinstance(url_fuente, str):
-            raise ErrorIngesta(f"Faltan identificador o URL para {nombre}.")
-        resultado[nombre] = SerieConfigurada(nombre, identificador, url_fuente)
+        url_descarga = datos.get("url_descarga")
+        if (
+            not isinstance(identificador, str)
+            or not isinstance(url_fuente, str)
+            or not isinstance(url_descarga, str)
+        ):
+            raise ErrorIngesta(
+                f"Faltan identificador, URL fuente o URL de descarga para {nombre}."
+            )
+        resultado[nombre] = SerieConfigurada(
+            nombre, identificador, url_fuente, url_descarga
+        )
     return resultado
 
 
@@ -95,6 +118,50 @@ def descargar_json(url: str) -> bytes:
     except json.JSONDecodeError as error:
         raise ErrorIngesta("La fuente no devolvió JSON válido.") from error
     return contenido
+
+
+def _contexto_tls_cnbv() -> ssl.SSLContext:
+    """Crea un contexto estricto con el intermedio omitido por el servidor CNBV."""
+    ruta_certificado = _raiz_proyecto() / RUTA_CERTIFICADO_INTERMEDIO_CNBV
+    if not ruta_certificado.is_file():
+        raise ErrorIngesta(
+            "No se encontró el certificado intermedio requerido para CNBV."
+        )
+    contexto = ssl.create_default_context()
+    try:
+        contexto.load_verify_locations(cafile=str(ruta_certificado))
+    except (OSError, ssl.SSLError) as error:
+        raise ErrorIngesta(
+            "No fue posible cargar el certificado intermedio de CNBV."
+        ) from error
+    return contexto
+
+
+def descargar_excel_cnbv(url: str) -> ArchivoDescargado:
+    """Descarga y valida la exportación XLSX oficial de la CNBV mediante TLS."""
+    solicitud = Request(url, headers={"User-Agent": "credit-risk-lab/0.1"})
+    try:
+        with urlopen(solicitud, context=_contexto_tls_cnbv(), timeout=60) as respuesta:
+            contenido = cast(bytes, respuesta.read())
+            tipo_contenido = respuesta.headers.get_content_type().lower()
+            etag = respuesta.headers.get("ETag")
+            ultima_modificacion = respuesta.headers.get("Last-Modified")
+    except OSError as error:
+        raise ErrorIngesta(
+            "No fue posible descargar el Excel oficial de IMOR desde CNBV."
+        ) from error
+
+    tipos_permitidos = {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+    }
+    if tipo_contenido not in tipos_permitidos:
+        raise ErrorIngesta(
+            "La descarga de CNBV no reporta un tipo de contenido XLSX válido."
+        )
+    if not zipfile.is_zipfile(BytesIO(contenido)):
+        raise ErrorIngesta("La descarga de CNBV no contiene un archivo XLSX válido.")
+    return ArchivoDescargado(contenido, etag, ultima_modificacion)
 
 
 def descargar_inpc_csv(inicio: int, fin: int) -> bytes:
@@ -458,38 +525,71 @@ def ejecutar(args: argparse.Namespace) -> Path:
     url_tiie = URL_BANXICO.format(
         serie=tiie_id, inicio=args.anio_inicio, fin=anio_fin, token=token_banxico
     )
-    descargas = [
+    descargas: list[tuple[str, str, bytes, str, str | None, str | None]] = [
         (
             "inpc",
             URL_INPC_EXPORTACION,
             descargar_inpc_csv(args.anio_inicio, anio_fin),
             "csv",
+            None,
+            None,
         ),
         (
             "desempleo_desestacionalizado",
             url_desempleo,
             descargar_json(url_desempleo),
             "json",
+            None,
+            None,
         ),
-        ("tasa_nominal_fondeo", url_tiie, descargar_json(url_tiie), "json"),
+        (
+            "tasa_nominal_fondeo",
+            url_tiie,
+            descargar_json(url_tiie),
+            "json",
+            None,
+            None,
+        ),
     ]
 
-    ruta_imor = Path(args.imor_csv).expanduser().resolve()
-    if not ruta_imor.is_file():
-        raise ErrorIngesta(
-            "--imor-csv debe apuntar a una exportación CSV existente de CNBV."
+    if args.imor_csv:
+        ruta_imor = Path(args.imor_csv).expanduser().resolve()
+        if not ruta_imor.is_file():
+            raise ErrorIngesta(
+                "--imor-csv debe apuntar a una exportación CSV o XLSX existente de CNBV."
+            )
+        extension_imor = ruta_imor.suffix.lower().removeprefix(".")
+        if extension_imor not in {"csv", "xlsx"}:
+            raise ErrorIngesta("--imor-csv debe ser un archivo CSV o XLSX de CNBV.")
+        descargas.append(
+            (
+                "imor_consumo_sofipos",
+                str(ruta_imor),
+                ruta_imor.read_bytes(),
+                extension_imor,
+                None,
+                None,
+            )
         )
-    extension_imor = ruta_imor.suffix.lower().removeprefix(".")
-    if extension_imor not in {"csv", "xlsx"}:
-        raise ErrorIngesta("--imor-csv debe ser un archivo CSV o XLSX de CNBV.")
-    descargas.append(
-        ("imor_consumo_sofipos", str(ruta_imor), ruta_imor.read_bytes(), extension_imor)
-    )
+    else:
+        descarga_imor = descargar_excel_cnbv(
+            series["imor_consumo_sofipos"].url_descarga
+        )
+        descargas.append(
+            (
+                "imor_consumo_sofipos",
+                series["imor_consumo_sofipos"].url_descarga,
+                descarga_imor.contenido,
+                "xlsx",
+                descarga_imor.etag,
+                descarga_imor.ultima_modificacion,
+            )
+        )
 
     directorio_raw = raiz / "data" / "raw"
     registros: list[dict[str, str]] = []
     rutas_raw: dict[str, Path] = {}
-    for nombre, url, contenido, extension in descargas:
+    for nombre, url, contenido, extension, etag, ultima_modificacion in descargas:
         ruta_raw, checksum = guardar_raw(contenido, directorio_raw, nombre, extension)
         rutas_raw[nombre] = ruta_raw
         registros.append(
@@ -501,6 +601,8 @@ def ejecutar(args: argparse.Namespace) -> Path:
                 "ruta_local": str(ruta_raw.relative_to(raiz)),
                 "sha256": checksum,
                 "tamanio_bytes": str(len(contenido)),
+                "etag": etag or "",
+                "ultima_modificacion": ultima_modificacion or "",
             }
         )
 
@@ -534,8 +636,10 @@ def argumentos() -> argparse.ArgumentParser:
     analizador = argparse.ArgumentParser(description=__doc__)
     analizador.add_argument(
         "--imor-csv",
-        required=True,
-        help="Exportación CSV o Excel de serie histórica desde CNBV.",
+        help=(
+            "Exportación CSV o Excel local de CNBV. Si se omite, se descarga el "
+            "Excel oficial configurado."
+        ),
     )
     analizador.add_argument(
         "--columna-fecha", help="Nombre exacto de la columna de fecha del CSV CNBV."
