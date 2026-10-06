@@ -151,10 +151,25 @@ Cada validación debe conservar:
 No se registrarán resultados empíricos en este documento. Los hallazgos
 pertenecerán al reporte analítico una vez construido el pipeline.
 
-## Próximo corte vertical
+## Automatización de la extracción
 
-El siguiente cambio debe descargar una muestra pequeña de cada una de las
-cuatro fuentes, archivarla fuera de Git junto con su checksum y verificar las
-columnas y fechas. Sólo entonces se implementará la ingesta idempotente. La
-restricción principal sigue siendo CNBV: no se debe automatizar Power BI hasta
-confirmar que su exportación contiene los saldos o el IMOR sectorial requeridos.
+La ingesta descarga directamente el Excel publicado por CNBV en `url_descarga`
+del catálogo, usando TLS y validando el tipo de contenido y la estructura XLSX
+antes de procesarlo. Conserva el archivo original direccionado por SHA-256 y,
+cuando el servidor los publica, registra `ETag` y `Last-Modified` en el
+manifiesto. `--imor-csv` permanece disponible para repetir una extracción
+archivada o recuperar el flujo si la fuente cambia.
+
+La automatización no sustituye la validación metodológica: se debe seguir
+confirmando que la exportación contiene el agregado IMOR consumo requerido y
+documentar cambios de definición o cobertura.
+
+Al validar la conexión el 6 de octubre de 2026, el servidor CNBV omitía de su
+respuesta el certificado intermedio `GlobalSign RSA OV SSL CA 2018`. El proyecto
+incluye ese intermedio público en
+`certificados/globalsign-rsa-ov-ssl-ca-2018.pem` exclusivamente para la
+conexión CNBV, sin desactivar la validación de hostname ni de la cadena. Se
+obtuvo de la URL AIA publicada en el certificado CNBV y se verificó contra la
+raíz `GlobalSign Root CA - R3` del sistema. Su huella SHA-256 es
+`B6:76:FF:A3:17:9E:88:12:09:3A:1B:5E:AF:EE:87:6A:E7:A6:AA:F2:31:07:8D:AD:1B:FB:21:CD:28:93:76:4A`
+y vence el 21 de noviembre de 2028.

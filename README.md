@@ -35,24 +35,26 @@ make precommit
 
 ## Ingesta de datos
 
-La CNBV publica una exportación oficial de su serie histórica. El lector acepta
-el Excel de Sofipos y extrae explícitamente la única fila agregada `IMOR
-consumo`; también acepta un CSV ya preparado. Ejecútalo junto con el token de
-Banxico cargado en el entorno:
+La ingesta descarga el Excel oficial de la CNBV configurado en
+`config/series.yml`, valida que sea un XLSX y extrae explícitamente la única
+fila agregada `IMOR consumo`. Ejecútala junto con el token de Banxico cargado
+en el entorno:
 
 ```bash
-make datos IMOR_CSV=/ruta/a/sh_data_export_27.xlsx
+make datos
 ```
 
-Si usas un CSV cuyas columnas no se llaman `fecha`/`periodo` e `imor`, indica
-sus nombres exactos:
+Para reproducir una extracción previamente archivada o usar un CSV preparado,
+indica un archivo local con `IMOR_CSV`. Si sus columnas no se llaman
+`fecha`/`periodo` e `imor`, indica sus nombres exactos:
 
 ```bash
 make datos IMOR_CSV=/ruta/al/archivo.csv IMOR_FECHA='Periodo' IMOR_VALOR='IMOR'
 ```
 
-El comando descarga INPC, desempleo y TIIE, guarda originales inmutables bajo
-`data/raw/`, registra checksums en `data/interim/` y genera
+El comando descarga INPC, desempleo, TIIE e IMOR; guarda originales inmutables
+bajo `data/raw/`, registra checksums y los metadatos HTTP disponibles en
+`data/interim/` y genera
 `data/processed/conjunto_analitico.parquet`. Estos artefactos no se versionan.
 
 Después de la ingesta, valida la tabla antes de crear rezagos o ajustar modelos:
