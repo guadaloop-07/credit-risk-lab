@@ -66,6 +66,24 @@ make validar
 El reporte queda en `data/interim/reporte_calidad.json` e incluye grano
 mensual, meses faltantes, duplicados, valores faltantes, rangos y antigüedad.
 
+## Benchmark y backtest
+
+Una vez aprobada la calidad, ejecuta el benchmark de persistencia y su
+evaluación temporal:
+
+```bash
+make modelar
+```
+
+El comando crea rezagos de IMOR a un mes y de las variables macro a tres meses.
+Para el benchmark conserva toda fila con IMOR rezagado disponible —aunque los
+rezagos macro iniciales aún no existan—, reserva los últimos 24 meses para
+prueba (o 12 si no mantiene 96 observaciones de entrenamiento) y ejecuta un
+backtest expansivo dentro del entrenamiento. Guarda predicciones y métricas
+MAE, RMSE, sesgo y MASE en
+`data/interim/modelos/`. Este benchmark es la referencia para evaluar la futura
+regresión dinámica.
+
 Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las convenciones de
 ramas, commits y pull requests.
 
