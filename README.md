@@ -82,7 +82,10 @@ prueba (o 12 si no mantiene 96 observaciones de entrenamiento) y ejecuta un
 backtest expansivo dentro del entrenamiento. Guarda predicciones y métricas
 MAE, RMSE, sesgo y MASE en
 `data/interim/modelos/`. Este benchmark es la referencia para evaluar la futura
-regresión dinámica.
+regresión dinámica. La futura regresión usará únicamente casos completos para
+sus rezagos macro y requerirá al menos 84 observaciones de entrenamiento (12
+por cada uno de sus siete coeficientes), conservando una prueba final mínima de
+12 meses.
 
 Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las convenciones de
 ramas, commits y pull requests.
