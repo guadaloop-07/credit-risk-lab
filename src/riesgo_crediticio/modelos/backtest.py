@@ -26,7 +26,17 @@ COLUMNAS_REZAGADAS = {
     "inflacion_interanual_pct": 3,
     "desempleo_pct": 3,
 }
-MINIMO_ENTRENAMIENTO = 96
+COLUMNAS_REGRESION_DINAMICA = (
+    "imor_pct",
+    "imor_lag_1",
+    "tasa_real_lag_3",
+    "inflacion_interanual_lag_3",
+    "desempleo_lag_3",
+    "indicador_covid",
+    "ruptura_contable",
+)
+MINIMO_ENTRENAMIENTO_PERSISTENCIA = 96
+MINIMO_ENTRENAMIENTO_REGRESION_DINAMICA = 84
 MESES_PRUEBA_PREFERIDOS = 24
 MESES_PRUEBA_REDUCIDOS = 12
 
@@ -96,11 +106,26 @@ def crear_caracteristicas(tabla: pd.DataFrame) -> pd.DataFrame:
     return resultado
 
 
+def preparar_regresion_dinamica(caracteristicas: pd.DataFrame) -> pd.DataFrame:
+    """Conserva los casos completos requeridos por la especificación dinámica."""
+    faltantes = sorted(set(COLUMNAS_REGRESION_DINAMICA).difference(caracteristicas))
+    if faltantes:
+        raise ErrorModelo(
+            f"Faltan columnas para la regresión dinámica: {', '.join(faltantes)}."
+        )
+    resultado = caracteristicas.dropna(subset=COLUMNAS_REGRESION_DINAMICA).reset_index(
+        drop=True
+    )
+    if resultado.empty:
+        raise ErrorModelo("No hay casos completos para la regresión dinámica.")
+    return resultado
+
+
 def separar_prueba_final(
     tabla: pd.DataFrame,
-    minimo_entrenamiento: int = MINIMO_ENTRENAMIENTO,
+    minimo_entrenamiento: int = MINIMO_ENTRENAMIENTO_PERSISTENCIA,
 ) -> ParticionTemporal:
-    """Reserva 24 meses finales o 12 si la muestra no permite entrenar con 96."""
+    """Reserva 24 meses finales o 12 si se conserva el mínimo indicado."""
     for meses_prueba in (MESES_PRUEBA_PREFERIDOS, MESES_PRUEBA_REDUCIDOS):
         if len(tabla) - meses_prueba >= minimo_entrenamiento:
             return ParticionTemporal(
@@ -153,7 +178,7 @@ def calcular_metricas(predicciones: pd.DataFrame, escala_mase: float) -> Metrica
 
 def ejecutar_backtest_expansivo(
     entrenamiento: pd.DataFrame,
-    minimo_entrenamiento: int = MINIMO_ENTRENAMIENTO,
+    minimo_entrenamiento: int = MINIMO_ENTRENAMIENTO_PERSISTENCIA,
 ) -> pd.DataFrame:
     """Evalúa pronósticos de un paso con una ventana de entrenamiento expansiva."""
     if len(entrenamiento) <= minimo_entrenamiento:
@@ -197,7 +222,7 @@ def evaluar_persistencia(tabla: pd.DataFrame) -> EvaluacionPersistencia:
         },
         "backtest_expansivo": {
             "filas": len(predicciones_backtest),
-            "minimo_entrenamiento": MINIMO_ENTRENAMIENTO,
+            "minimo_entrenamiento": MINIMO_ENTRENAMIENTO_PERSISTENCIA,
             "metricas": calcular_metricas(predicciones_backtest, escala_mase),
         },
         "prueba_final": {

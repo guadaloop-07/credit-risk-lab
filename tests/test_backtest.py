@@ -11,10 +11,12 @@ import pandas as pd
 import pytest
 
 from riesgo_crediticio.modelos.backtest import (
+    MINIMO_ENTRENAMIENTO_REGRESION_DINAMICA,
     ErrorModelo,
     calcular_metricas,
     crear_caracteristicas,
     ejecutar,
+    preparar_regresion_dinamica,
     pronosticar_persistencia,
     separar_prueba_final,
 )
@@ -57,6 +59,19 @@ def test_particion_reduce_prueba_a_doce_meses_si_hay_menos_de_120_filas() -> Non
     assert particion.meses_prueba == 12
     assert len(particion.entrenamiento) == 102
     assert len(particion.prueba) == 12
+
+
+def test_regresion_dinamica_conserva_84_filas_y_12_meses_de_prueba() -> None:
+    """La especificación dinámica conserva 12 observaciones por coeficiente."""
+    dinamica = preparar_regresion_dinamica(crear_caracteristicas(tabla_analitica(103)))
+
+    particion = separar_prueba_final(
+        dinamica, minimo_entrenamiento=MINIMO_ENTRENAMIENTO_REGRESION_DINAMICA
+    )
+
+    assert len(dinamica) == 100
+    assert particion.meses_prueba == 12
+    assert len(particion.entrenamiento) == 88
 
 
 def test_persistencia_usa_exclusivamente_el_imor_del_mes_anterior() -> None:

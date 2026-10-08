@@ -6,12 +6,16 @@ interpretables.
 
 ## Estado
 
-El proyecto se encuentra en preparación. El primer objetivo es construir un
-MVP que relacione el índice de morosidad del crédito al consumo de las Sofipos
-con desempleo, inflación y tasas reales, comparando un modelo interpretable
-contra un benchmark de persistencia.
+La primera fase de modelado está cerrada. El flujo de datos, el benchmark de
+persistencia y la regresión dinámica OLS/HAC ya fueron evaluados con una prueba
+temporal final. La regresión no superó a persistencia en el corte disponible,
+por lo que persistencia permanece como la referencia predictiva del MVP.
 
-No se han generado resultados empíricos todavía.
+La siguiente iteración propuesta es ETS (suavizamiento exponencial) univariado
+del IMOR. Su alcance y criterios de evaluación están definidos antes de
+implementarlo en el [plan de ETS](docs/plan-ets.md). La regresión se conserva
+como experimento reproducible y sensibilidad interpretable; no debe usarse
+como modelo operativo ni para inferencia causal.
 
 ## Desarrollo local
 
@@ -81,8 +85,27 @@ rezagos macro iniciales aún no existan—, reserva los últimos 24 meses para
 prueba (o 12 si no mantiene 96 observaciones de entrenamiento) y ejecuta un
 backtest expansivo dentro del entrenamiento. Guarda predicciones y métricas
 MAE, RMSE, sesgo y MASE en
-`data/interim/modelos/`. Este benchmark es la referencia para evaluar la futura
-regresión dinámica.
+`data/interim/modelos/`. Este benchmark es la referencia para evaluar cualquier
+modelo candidato, incluido ETS. La regresión dinámica usa únicamente casos
+completos para sus rezagos macro y requiere al menos 84 observaciones de
+entrenamiento (12 por cada uno de sus siete coeficientes), conservando una
+prueba final mínima de 12 meses.
+
+## Regresión dinámica
+
+Para comparar la especificación dinámica OLS/HAC contra persistencia, ejecuta:
+
+```bash
+make evaluar-modelos
+```
+
+El comando reestima cada corte del backtest expansivo con IMOR `t-1`, variables
+macro `t-3`, COVID y ruptura contable. Produce predicciones, coeficientes HAC,
+residuos y diagnósticos en `data/interim/modelos/`; no recorta predicciones
+fuera del rango de 0 a 100 y las reporta explícitamente. La evaluación quedó
+cerrada: la regresión no superó a persistencia. Se mantiene este comando para
+reproducir y actualizar el análisis, no para optimizar la especificación contra
+la prueba final ya observada.
 
 Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las convenciones de
 ramas, commits y pull requests.
@@ -90,6 +113,8 @@ ramas, commits y pull requests.
 ## Documentación
 
 - [Especificación detallada del MVP](docs/especificacion-mvp.md)
+- [Reporte de evaluación de modelos](reports/evaluacion-modelos.md)
+- [Plan de implementación de ETS](docs/plan-ets.md)
 - [Catálogo y selección de fuentes](docs/fuentes.md)
 - [Definición de trabajo del IMOR](docs/metodologia/definicion-imor.md)
 - [Política de datos](data/README.md)

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="520" viewBox="0 0 1120 520" role="img" aria-labelledby="titulo descripcion">
+  <title id="titulo">Variables de la regresión dinámica</title>
+  <desc id="descripcion">El IMOR rezagado un mes, tres variables macro rezagadas tres meses y dos indicadores de régimen predicen el IMOR del mes t.</desc>
+  <defs>
+    <marker id="flecha" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4b5563"/>
+    </marker>
+    <style>
+      .caja { fill: #f3f4f6; stroke: #9ca3af; stroke-width: 1.5; }
+      .objetivo { fill: #dbeafe; stroke: #2563eb; stroke-width: 2; }
+      .titulo { fill: #111827; font: 600 20px system-ui, sans-serif; text-anchor: middle; }
+      .subtitulo { fill: #4b5563; font: 15px system-ui, sans-serif; text-anchor: middle; }
+      .leyenda { fill: #374151; font: 16px system-ui, sans-serif; text-anchor: middle; }
+      .flecha { stroke: #4b5563; stroke-width: 1.8; fill: none; marker-end: url(#flecha); }
+    </style>
+  </defs>
+  <text x="560" y="30" class="leyenda">Información disponible antes de pronosticar el IMOR del mes t</text>
+
+  <rect x="45" y="60" width="310" height="54" rx="8" class="caja"/>
+  <text x="200" y="83" class="titulo">IMOR(t−1)</text>
+  <text x="200" y="105" class="subtitulo">último IMOR observado</text>
+
+  <rect x="45" y="140" width="310" height="54" rx="8" class="caja"/>
+  <text x="200" y="174" class="titulo">Tasa real(t−3)</text>
+
+  <rect x="45" y="220" width="310" height="54" rx="8" class="caja"/>
+  <text x="200" y="254" class="titulo">Inflación(t−3)</text>
+
+  <rect x="45" y="300" width="310" height="54" rx="8" class="caja"/>
+  <text x="200" y="334" class="titulo">Desempleo(t−3)</text>
+
+  <rect x="45" y="380" width="310" height="54" rx="8" class="caja"/>
+  <text x="200" y="403" class="titulo">Indicador COVID(t)</text>
+  <text x="200" y="425" class="subtitulo">régimen atípico</text>
+
+  <rect x="45" y="460" width="310" height="54" rx="8" class="caja"/>
+  <text x="200" y="483" class="titulo">Ruptura contable(t)</text>
+  <text x="200" y="505" class="subtitulo">régimen desde enero de 2022</text>
+
+  <path d="M355,87 H720" class="flecha"/>
+  <path d="M355,167 H660 V207 H720" class="flecha"/>
+  <path d="M355,247 H640 V227 H720" class="flecha"/>
+  <path d="M355,327 H660 V247 H720" class="flecha"/>
+  <path d="M355,407 H680 V267 H720" class="flecha"/>
+  <path d="M355,487 H700 V287 H720" class="flecha"/>
+
+  <rect x="725" y="170" width="350" height="150" rx="12" class="objetivo"/>
+  <text x="900" y="225" class="titulo">IMOR(t)</text>
+  <text x="900" y="253" class="subtitulo">objetivo a pronosticar</text>
+  <text x="900" y="282" class="subtitulo">porcentaje de cartera morosa</text>
+</svg>

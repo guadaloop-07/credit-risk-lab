@@ -238,6 +238,8 @@ Reglas obligatorias:
 - tomar decisiones de especificación sólo con entrenamiento;
 - reservar los últimos 24 meses completos como prueba final, si la muestra lo
   permite;
+- calcular la muestra efectiva por modelo después de aplicar sus rezagos y no
+  atribuir al benchmark la pérdida de observaciones propia de la regresión;
 - registrar la fecha máxima disponible de cada serie.
 
 El MVP usará datos históricos revisados, no vintages de publicación en tiempo
@@ -319,8 +321,15 @@ se reportarán y podrá evaluarse el logit de `IMOR/100` como sensibilidad.
 
 - Reservar los últimos 24 meses completos como prueba.
 - No consultar sus métricas durante la selección.
-- Si quedan menos de 96 observaciones de entrenamiento, reducir la prueba a 12
-  meses y documentar la decisión.
+- Reducir la prueba a 12 meses si 24 no conservan el mínimo de entrenamiento;
+  no reducirla por debajo de 12 meses.
+- El benchmark de persistencia requiere al menos 96 observaciones de
+  entrenamiento.
+- La regresión dinámica requiere al menos 84 observaciones de entrenamiento.
+  Su especificación tiene siete coeficientes, incluido el intercepto, por lo
+  que este umbral preserva al menos 12 observaciones por coeficiente. Esta
+  excepción sólo aplica después de exigir casos completos para sus rezagos
+  macroeconómicos y debe reportarse junto con los resultados.
 
 ### 10.2 Backtest
 

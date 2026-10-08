@@ -1,4 +1,4 @@
-.PHONY: setup formato lint pruebas precommit verificar datos validar modelar
+.PHONY: setup formato lint pruebas precommit verificar datos validar modelar evaluar-modelos
 
 setup:
 	uv sync --all-groups
@@ -29,3 +29,6 @@ validar:
 
 modelar:
 	uv run python -m riesgo_crediticio.modelos.backtest
+
+evaluar-modelos:
+	uv run python -m riesgo_crediticio.modelos.regresion_dinamica
