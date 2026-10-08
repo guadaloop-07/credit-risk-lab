@@ -87,6 +87,19 @@ sus rezagos macro y requerirá al menos 84 observaciones de entrenamiento (12
 por cada uno de sus siete coeficientes), conservando una prueba final mínima de
 12 meses.
 
+## Regresión dinámica
+
+Para comparar la especificación dinámica OLS/HAC contra persistencia, ejecuta:
+
+```bash
+make evaluar-modelos
+```
+
+El comando reestima cada corte del backtest expansivo con IMOR `t-1`, variables
+macro `t-3`, COVID y ruptura contable. Produce predicciones, coeficientes HAC,
+residuos y diagnósticos en `data/interim/modelos/`; no recorta predicciones
+fuera del rango de 0 a 100 y las reporta explícitamente.
+
 Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para conocer las convenciones de
 ramas, commits y pull requests.
 
